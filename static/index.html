@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EduAgent</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 30px 0; border-bottom: 1px solid #1e293b; }
+        header h1 { font-size: 2rem; color: #38bdf8; }
+        header p { color: #94a3b8; margin-top: 8px; }
+        .badges { display: flex; gap: 10px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+        .badge { background: #1e293b; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: #38bdf8; border: 1px solid #334155; }
+        .tabs { display: flex; gap: 4px; margin: 24px 0 16px; }
+        .tab { padding: 10px 20px; background: #1e293b; border: none; color: #94a3b8; border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+        .tab.active { background: #38bdf8; color: #0f172a; font-weight: 600; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        .chat-box { background: #1e293b; border-radius: 12px; padding: 16px; height: 380px; overflow-y: auto; margin-bottom: 12px; }
+        .msg { margin-bottom: 16px; }
+        .msg.user .bubble { background: #38bdf8; color: #0f172a; margin-left: auto; max-width: 75%; border-radius: 12px 12px 0 12px; padding: 10px 14px; }
+        .msg.bot .bubble { background: #334155; max-width: 85%; border-radius: 12px 12px 12px 0; padding: 10px 14px; white-space: pre-wrap; line-height: 1.6; }
+        .msg-label { font-size: 0.7rem; color: #64748b; margin-bottom: 4px; }
+        .input-row { display: flex; gap: 8px; }
+        input[type=text], textarea, select { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; }
+        input[type=text] { flex: 1; }
+        button.send { background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; padding: 10px 20px; cursor: pointer; font-weight: 600; }
+        button.send:hover { background: #7dd3fc; }
+        button.send:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .card h3 { color: #38bdf8; margin-bottom: 12px; }
+        .quiz-option { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; margin: 6px 0; cursor: pointer; transition: all 0.2s; }
+        .quiz-option:hover { border-color: #38bdf8; }
+        .quiz-option.selected { border-color: #38bdf8; background: #1e40af22; }
+        .quiz-option.correct { border-color: #22c55e; background: #16a34a22; }
+        .quiz-option.wrong { border-color: #ef4444; background: #dc262622; }
+        .source-tag { background: #0f172a; border: 1px solid #334155; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; color: #94a3b8; margin: 2px; display: inline-block; }
+        .progress-bar { background: #0f172a; border-radius: 8px; height: 8px; margin: 6px 0; overflow: hidden; }
+        .progress-fill { background: #38bdf8; height: 100%; border-radius: 8px; transition: width 0.5s; }
+        .upload-area { border: 2px dashed #334155; border-radius: 12px; padding: 30px; text-align: center; color: #64748b; cursor: pointer; }
+        .upload-area:hover { border-color: #38bdf8; color: #38bdf8; }
+        .tag { display: inline-block; padding: 2px 8px; background: #1e293b; border-radius: 4px; font-size: 0.75rem; margin: 2px; color: #94a3b8; }
+        .loading { color: #64748b; font-style: italic; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>&#127891; EduAgent</h1>
+        <p>AI-Powered Learning Assistant &#8212; Multi-Agent System</p>
+        <div class="badges">
+            <span class="badge">Phase 3: RAG</span>
+            <span class="badge">Phase 4: Portfolio</span>
+            <span class="badge">Phase 5: Multi-Agent</span>
+            <span class="badge">Groq Llama3</span>
+            <span class="badge">LangGraph</span>
+        </div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('chat', event)">&#128172; Chat</button>
+        <button class="tab" onclick="switchTab('quiz', event)">&#128221; Quiz</button>
+        <button class="tab" onclick="switchTab('research', event)">&#128300; Research</button>
+        <button class="tab" onclick="switchTab('upload', event)">&#128228; Upload Docs</button>
+        <button class="tab" onclick="switchTab('progress', event)">&#128202; Progress</button>
+    </div>
+
+    <!-- CHAT TAB -->
+    <div id="tab-chat" class="panel active">
+        <div class="chat-box" id="chatBox">
+            <div class="msg bot">
+                <div class="msg-label">EduAgent</div>
+                <div class="bubble">Salam! Main EduAgent hoon.
+
+Aap mujhse kuch bhi pooch sakte ho:
+- Koi bhi topic explain karao
+- "quiz on [topic]" - MCQ quiz lo
+- "study plan for [topic]" - learning roadmap lo
+- PDF upload karo aur uss pe sawal poochhein
+
+Kya seekhna chahte ho aaj?</div>
+            </div>
+        </div>
+        <div class="input-row">
+            <input type="text" id="chatInput" placeholder="Koi bhi sawal poochho..." onkeypress="if(event.key==='Enter') sendChat()">
+            <button class="send" onclick="sendChat()" id="chatBtn">Send</button>
+        </div>
+    </div>
+
+    <!-- QUIZ TAB -->
+    <div id="tab-quiz" class="panel">
+        <div class="card">
+            <h3>&#128221; Quiz Generator</h3>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <input type="text" id="quizTopic" placeholder="Topic (e.g., Python functions)" style="flex:1">
+                <select id="quizCount" style="width:100px;">
+                    <option value="3">3 Qs</option>
+                    <option value="5" selected>5 Qs</option>
+                    <option value="10">10 Qs</option>
+                </select>
+                <button class="send" onclick="generateQuiz()" id="quizBtn">Generate</button>
+            </div>
+            <div id="quizArea"><p style="color:#64748b">Topic dalo aur quiz generate karo!</p></div>
+        </div>
+    </div>
+
+    <!-- RESEARCH TAB -->
+    <div id="tab-research" class="panel">
+        <div class="card">
+            <h3>&#128300; Study Plan Generator</h3>
+            <div style="display:flex; gap:8px; margin-bottom:16px;">
+                <input type="text" id="researchTopic" placeholder="Topic (e.g., Machine Learning)" style="flex:1">
+                <button class="send" onclick="doResearch()" id="researchBtn">Research</button>
+            </div>
+            <div id="researchResult"><p style="color:#64748b">Topic dalo - detailed study plan milega</p></div>
+        </div>
+    </div>
+
+    <!-- UPLOAD TAB -->
+    <div id="tab-upload" class="panel">
+        <div class="card">
+            <h3>&#128228; Upload Documents to Knowledge Base</h3>
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div style="font-size:2rem">&#128196;</div>
+                <div>Click to upload PDF or TXT</div>
+                <div style="font-size:0.8rem; margin-top:4px">Supported: .pdf, .txt, .md</div>
+            </div>
+            <input type="file" id="fileInput" style="display:none" accept=".pdf,.txt,.md" onchange="uploadFile(this)">
+            <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+                <span style="color:#94a3b8; font-size:0.9rem;">Topic:</span>
+                <input type="text" id="docTopic" placeholder="e.g., Python, ML, History" style="flex:1">
+            </div>
+            <div id="uploadStatus" style="margin-top:12px;"></div>
+        </div>
+        <div class="card" id="docList"><h3>&#128218; Knowledge Base</h3><p style="color:#64748b">Loading...</p></div>
+    </div>
+
+    <!-- PROGRESS TAB -->
+    <div id="tab-progress" class="panel">
+        <div class="card">
+            <h3>&#128202; Your Learning Progress</h3>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <input type="text" id="progressUser" placeholder="Username" style="flex:1" value="default_user">
+                <button class="send" onclick="loadProgress()">Load</button>
+            </div>
+            <div id="progressArea"><p style="color:#64748b">Username dalo aur progress dekho</p></div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
